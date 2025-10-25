@@ -2,7 +2,11 @@ import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 
 import type { AppRouter } from "./root";
 import { appRouter } from "./root";
-import { createTRPCContext } from "./trpc";
+import {
+  createExpressContext,
+  createExpressTRPCMiddleware,
+  createTRPCContext,
+} from "./trpc";
 
 /**
  * Inference helpers for input types
@@ -22,3 +26,6 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 export { createTRPCContext, appRouter };
 export type { AppRouter, RouterInputs, RouterOutputs };
+
+// Express-specific exports
+export { createExpressContext, createExpressTRPCMiddleware };

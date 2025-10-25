@@ -22,7 +22,7 @@
     "@atlas/db": "workspace:*",
     "@atlas/validators": "workspace:*",
     "@trpc/server": "catalog:",
-    "superjson": "2.2.2",
+    "superjson": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

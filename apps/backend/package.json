@@ -1,0 +1,34 @@
+{
+  "name": "@atlas/backend",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "pnpm with-env tsx watch src/index.ts",
+    "build": "rm -rf ./dist && tsc",
+    "tsc": "tsc --noEmit",
+    "start": "pnpm with-env node dist/src/index.js",
+    "with-env": "dotenv -e ../../.env --"
+  },
+  "dependencies": {
+    "@atlas/api": "workspace:*",
+    "@atlas/auth": "workspace:*",
+    "@atlas/db": "workspace:*",
+    "@trpc/server": "catalog:",
+    "better-auth": "catalog:",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@atlas/eslint-config": "workspace:*",
+    "@atlas/prettier-config": "workspace:*",
+    "@atlas/tsconfig": "workspace:*",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.18.10",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.20.6"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

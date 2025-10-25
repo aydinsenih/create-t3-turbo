@@ -1,34 +1,49 @@
 import type { TRPCQueryOptions } from "@trpc/tanstack-react-query";
 import { cache } from "react";
-import { headers } from "next/headers";
+import { headers as getHeaders } from "next/headers";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { createTRPCClient, httpBatchLink, loggerLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
+import SuperJSON from "superjson";
 
 import type { AppRouter } from "@atlas/api";
-import { appRouter, createTRPCContext } from "@atlas/api";
 
-import { auth } from "~/auth/server";
+import { env } from "~/env";
 import { createQueryClient } from "./query-client";
 
-/**
- * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
- * handling a tRPC call from a React Server Component.
- */
-const createContext = cache(async () => {
-  const heads = new Headers(await headers());
-  heads.set("x-trpc-source", "rsc");
+export const getQueryClient = cache(createQueryClient);
 
-  return createTRPCContext({
-    headers: heads,
-    auth,
-  });
+/**
+ * Create a tRPC client that connects to the Express backend
+ * Server components use this to fetch data during server-side rendering
+ */
+const serverClient = createTRPCClient<AppRouter>({
+  links: [
+    loggerLink({
+      enabled: (op) =>
+        env.NODE_ENV === "development" ||
+        (op.direction === "down" && op.result instanceof Error),
+    }),
+    httpBatchLink({
+      transformer: SuperJSON,
+      url: env.NEXT_PUBLIC_BACKEND_URL + "/trpc",
+      async headers() {
+        const headers = new Headers(await getHeaders());
+        headers.set("x-trpc-source", "rsc");
+        return headers;
+      },
+      fetch(url, options) {
+        return fetch(url, {
+          ...options,
+          credentials: "include", // Include cookies in cross-origin requests
+        });
+      },
+    }),
+  ],
 });
 
-const getQueryClient = cache(createQueryClient);
-
 export const trpc = createTRPCOptionsProxy<AppRouter>({
-  router: appRouter,
-  ctx: createContext,
+  client: serverClient,
   queryClient: getQueryClient,
 });
 

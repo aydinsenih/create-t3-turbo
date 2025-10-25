@@ -13,6 +13,7 @@ export function initAuth(options: {
 
   discordClientId: string;
   discordClientSecret: string;
+  frontendUrl?: string;
 }) {
   const config = {
     database: drizzleAdapter(db, {
@@ -21,9 +22,14 @@ export function initAuth(options: {
     }),
     baseURL: options.baseUrl,
     secret: options.secret,
+    trustedOrigins: [options.frontendUrl].filter(Boolean) as string[],
     advanced: {
       database: {
         generateId: () => crypto.randomUUID(),
+      },
+      defaultCookieAttributes: {
+        sameSite: "lax",
+        secure: false, // Set to true in production with HTTPS
       },
     },
     plugins: [

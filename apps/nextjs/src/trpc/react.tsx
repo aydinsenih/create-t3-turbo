@@ -42,11 +42,17 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
         }),
         httpBatchStreamLink({
           transformer: SuperJSON,
-          url: getBaseUrl() + "/api/trpc",
+          url: getBaseUrl(),
           headers() {
             const headers = new Headers();
             headers.set("x-trpc-source", "nextjs-react");
             return headers;
+          },
+          fetch(url, options) {
+            return fetch(url, {
+              ...options,
+              credentials: "include", // Include cookies in cross-origin requests
+            });
           },
         }),
       ],
@@ -63,8 +69,9 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 }
 
 const getBaseUrl = () => {
-  if (typeof window !== "undefined") return window.location.origin;
-  if (env.VERCEL_URL) return `https://${env.VERCEL_URL}`;
-  // eslint-disable-next-line no-restricted-properties
-  return `http://localhost:${process.env.PORT ?? 3000}`;
+  // Use the Express backend URL
+  if (!env.NEXT_PUBLIC_BACKEND_URL) {
+    throw new Error("NEXT_PUBLIC_BACKEND_URL is not defined");
+  }
+  return `${env.NEXT_PUBLIC_BACKEND_URL}/trpc`;
 };

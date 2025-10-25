@@ -1,35 +1,29 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+"use client";
 
 import { Button } from "@atlas/ui/button";
 
-import { auth, getSession } from "~/auth/server";
+import { authClient } from "~/auth/client";
 
-export async function AuthShowcase() {
-  const session = await getSession();
+export function AuthShowcase() {
+  const { data: session, isPending } = authClient.useSession();
+
+  if (isPending) {
+    return <div>Loading...</div>;
+  }
 
   if (!session) {
     return (
-      <form>
-        <Button
-          size="lg"
-          formAction={async () => {
-            "use server";
-            const res = await auth.api.signInSocial({
-              body: {
-                provider: "discord",
-                // callbackURL: "/",
-              },
-            });
-            if (!res.url) {
-              throw new Error("No URL returned from signInSocial");
-            }
-            redirect(res.url);
-          }}
-        >
-          Sign in with Discord
-        </Button>
-      </form>
+      <Button
+        size="lg"
+        onClick={async () => {
+          await authClient.signIn.social({
+            provider: "discord",
+            callbackURL: window.location.origin + "/",
+          });
+        }}
+      >
+        Sign in with Discord
+      </Button>
     );
   }
 
@@ -39,20 +33,20 @@ export async function AuthShowcase() {
         <span>Logged in as {session.user.name}</span>
       </p>
 
-      <form>
-        <Button
-          size="lg"
-          formAction={async () => {
-            "use server";
-            await auth.api.signOut({
-              headers: await headers(),
-            });
-            redirect("/");
-          }}
-        >
-          Sign out
-        </Button>
-      </form>
+      <Button
+        size="lg"
+        onClick={async () => {
+          await authClient.signOut({
+            fetchOptions: {
+              onSuccess: () => {
+                window.location.href = "/";
+              },
+            },
+          });
+        }}
+      >
+        Sign out
+      </Button>
     </div>
   );
 }

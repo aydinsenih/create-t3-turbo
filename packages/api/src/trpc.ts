@@ -6,12 +6,16 @@
  * tl;dr - this is where all the tRPC server stuff is created and plugged in.
  * The pieces you will need to use are documented accordingly near the end
  */
+import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { initTRPC, TRPCError } from "@trpc/server";
+import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import superjson from "superjson";
 import { z, ZodError } from "zod/v4";
 
 import type { Auth } from "@atlas/auth";
 import { db } from "@atlas/db/client";
+
+import { appRouter } from "./root";
 
 /**
  * 1. CONTEXT
@@ -126,3 +130,57 @@ export const protectedProcedure = t.procedure
       },
     });
   });
+
+/**
+ * 4. EXPRESS ADAPTER
+ *
+ * These functions create tRPC context and middleware for Express applications
+ */
+
+/**
+ * Creates the tRPC context for Express requests
+ *
+ * This adapter extracts headers from the Express request and creates the tRPC context
+ * that includes auth, session, and database access.
+ */
+export const createExpressContext = (auth: Auth) => {
+  return ({ req }: CreateExpressContextOptions) => {
+    // Convert Express headers to Web Headers API format
+    const headers = new Headers();
+    Object.entries(req.headers).forEach(([key, value]) => {
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => headers.append(key, v));
+        } else {
+          headers.set(key, value);
+        }
+      }
+    });
+
+    return createTRPCContext({
+      headers,
+      auth,
+    });
+  };
+};
+
+/**
+ * Creates the Express middleware for tRPC
+ *
+ * Usage in your Express app:
+ * ```ts
+ * import { auth } from "@atlas/auth/server";
+ * import { createExpressTRPCMiddleware } from "@atlas/api";
+ *
+ * const trpcExpress = createExpressTRPCMiddleware(auth);
+ * app.use('/trpc', trpcExpress);
+ * ```
+ */
+export function createExpressTRPCMiddleware(
+  auth: Auth,
+): ReturnType<typeof createExpressMiddleware<typeof appRouter>> {
+  return createExpressMiddleware({
+    router: appRouter,
+    createContext: createExpressContext(auth),
+  });
+}
